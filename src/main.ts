@@ -39,6 +39,7 @@ const GAMEPLAY_ZOOM_LEVEL = 19;
 const NEIGHBORHOOD_SIZE = 8;
 const CACHE_SPAWN_PROBABILITY = 0.1;*/
 
+let heldToken = 5;
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
   zoom: GAMEPLAY_ZOOM_LEVEL,
@@ -66,19 +67,44 @@ const bounds = leaflet.latLngBounds([
   [origin.lat + 0.0001, origin.lng + 0.0001],
 ]);
 const rect = leaflet.rectangle(bounds).addTo(map);
-const rectPoints = 5;
 
-const popupDiv = document.createElement("div");
-popupDiv.innerHTML = `
+rect.bindPopup(() => {
+  const popupDiv = document.createElement("div");
+  let rectPoints = 53;
+  popupDiv.innerHTML = `
                 <div><span id="value">There is a cache here.  It has a token of ${rectPoints}.</span></div>
-                <button id="poke">poke</button><button id="craft">craft</button>`;
+                <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
 
-// Clicking the button decrements the cache's value and increments the player's points
-popupDiv
-  .querySelector<HTMLButtonElement>("#poke")!
-  .addEventListener("click", () => {
-    popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
-      "There is a cache here.  Currently there is no token.";
-  });
+  // Clicking the button decrements the cache's value and increments the player's points
+  popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
+    "click",
+    () => {
+      heldToken = rectPoints;
+      statusPanelDiv.innerHTML = heldToken.toString();
+      popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
+        "There is a cache here.  Currently there is no token.";
+      popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
+    },
+  );
 
-rect.bindPopup(popupDiv);
+  popupDiv.querySelector<HTMLButtonElement>("#craft")!.addEventListener(
+    "click",
+    () => {
+      if (heldToken == rectPoints) {
+        rectPoints *= 2;
+        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
+          `There is a cache here.  It has a token of ${rectPoints}.`;
+      }
+    },
+  );
+
+  popupDiv.querySelector<HTMLButtonElement>("#store")!.addEventListener(
+    "click",
+    () => {
+      rectPoints = heldToken;
+      popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
+        `There is a cache here.  It has a token of ${rectPoints}.`;
+    },
+  );
+  return popupDiv;
+});
