@@ -175,7 +175,7 @@ function checkButtons(
   craft.disabled = true;
   store.disabled = true;
 
-  if (Math.hypot(-x, -y) > 3) {
+  if (Math.hypot(-x, -y) > 4.5) {
     return;
   }
 
@@ -190,7 +190,7 @@ function checkButtons(
   }
 }
 
-leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 100 }).addTo(map); // Visual indicator of obtainable caches
+leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 200 }).addTo(map); // Visual indicator of obtainable caches
 // Look around the player's neighborhood for caches to spawn
 for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
   for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
