@@ -113,3 +113,98 @@ for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
     }
   }
 }
+
+/*
+// Creating one rectangle onto the map
+const origin = CLASSROOM_LATLNG;
+const bounds = leaflet.latLngBounds([
+  [origin.lat, origin.lng],
+  [origin.lat + 0.0001, origin.lng + 0.0001],
+]);
+const rect = leaflet.rectangle(bounds).addTo(map);
+
+let rectPoints: number | null = 5;
+const popupDiv = document.createElement("div");
+popupDiv.innerHTML =
+  `<div>There is a cache here.<span id = "message">It has a token of </span><span id = "value">${rectPoints}</span>.</message></div>
+      <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
+
+// Clicking the button decrements the cache's value and increments the player's points
+popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
+  "click",
+  () => {
+    if (heldToken == null) {
+      console.log(`You have no token.  Picking up token of ${rectPoints}`);
+      heldToken = rectPoints;
+      statusPanelDiv.innerHTML = `${heldToken}`;
+      popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+        "There is a cache here.  Currently there is no token.";
+      popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
+    } else if (rectPoints) {
+      console.log(
+        `You have a token in your inventory.  Swapping inventory with cache`,
+      );
+      const temp = heldToken;
+      heldToken = rectPoints;
+      rectPoints = temp;
+      statusPanelDiv.innerHTML = `${heldToken}`;
+      popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+        `There is a cache here.  It has a token of ${rectPoints}`;
+    } else {
+      console.log("There is nothing here that could be poked!");
+    }
+  },
+);
+
+popupDiv.querySelector<HTMLButtonElement>("#craft")!.addEventListener(
+  "click",
+  () => {
+    if (heldToken == rectPoints) {
+      console.log(
+        `Crafting a token of value ${heldToken} to create a ${
+          heldToken * 2
+        } token!`,
+      );
+      rectPoints *= 2;
+      popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+        `There is a cache here.  It has a token of ${rectPoints}.`;
+      heldToken = null;
+      statusPanelDiv.innerText = `${heldToken}`;
+    } else {
+      console.log(`Cannot craft!`);
+    }
+  },
+);
+
+// OUTCOMES FOR STORING
+// Player has token, cache has no token: Store token into cache, remove from player
+// Cache has token, player has no token: Cannot store, player has no token
+// Both have a token: SWAP
+popupDiv.querySelector<HTMLButtonElement>("#store")!.addEventListener(
+  "click",
+  () => {
+    if (heldToken && rectPoints) {
+      console.log(
+        `You have a token in your inventory.  Swapping inventory with cache`,
+      );
+      const temp = heldToken;
+      heldToken = rectPoints;
+      rectPoints = temp;
+      statusPanelDiv.innerHTML = `${heldToken}`;
+      popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+        `There is a cache here.  It has a token of ${rectPoints}`;
+    } else if (heldToken) {
+      console.log(`Storing token into cache`);
+      rectPoints = heldToken;
+      heldToken = null;
+      statusPanelDiv.innerHTML = `${heldToken}`;
+      popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+        `There is a cache here.  It has a token of ${rectPoints}`;
+    } else {
+      console.log("Player has no token.  Cannot store anything");
+    }
+  },
+);
+
+rect.bindPopup(popupDiv);
+*/
