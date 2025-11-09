@@ -28,6 +28,6 @@ Key technical challenge: Can you assemble a map-based user interface using the L
 - [x] create a second cell that would double the held cell based on crafting rules (craft)
 - [x] player can store token into cache (either swaps token or stores player token in cache)
 - [x] polish up button functionality (ie allow swapping tokens)
-- [ ] use loops to draw a whole grid of cells on the map
-- [ ] player can only collect from cells within a certain range
-- [ ] ensure consistent cell generation between reloads (might be unecessary)
+- [x] use loops to draw a whole grid of cells on the map
+- [x] player can only collect from cells within a certain range
+- [x] ensure consistent cell generation between reloads (might be unecessary)

@@ -9,23 +9,22 @@ import "./style.css"; // student-controlled page style
 import "./_leafletWorkaround.ts"; // fixes for missing Leaflet images
 
 // Import our luck function
+import luck from "./_luck.ts";
 
 // Create basic UI elements
 const controlPanelDiv = document.createElement("div");
 controlPanelDiv.id = "controlPanel";
-controlPanelDiv.style.background = "red";
+controlPanelDiv.innerHTML = `<h1>D3: World of Bits</h1>`;
 document.body.append(controlPanelDiv);
 
 const mapDiv = document.createElement("div");
 mapDiv.id = "map";
-mapDiv.style.background = "orange";
 document.body.append(mapDiv);
 
 let heldToken: number | null = 5;
 
 const statusPanelDiv = document.createElement("div");
 statusPanelDiv.id = "statusPanel";
-statusPanelDiv.style.background = "yellow";
 statusPanelDiv.innerText = `${heldToken}`;
 document.body.append(statusPanelDiv);
 
@@ -38,8 +37,8 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
-/*const NEIGHBORHOOD_SIZE = 8;
-const CACHE_SPAWN_PROBABILITY = 0.1;*/
+const NEIGHBORHOOD_SIZE = 8;
+const CACHE_SPAWN_PROBABILITY = 0.1;
 
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
@@ -70,10 +69,12 @@ function spawnCache(x: number, y: number) {
 
   const rect = leaflet.rectangle(bounds).addTo(map);
 
-  let rectPoints: number | null = 5;
+  let rectPoints: number | null = Math.ceil(
+    luck([x, y, "initialValue"].toString()) * 8,
+  );
   const popupDiv = document.createElement("div");
   popupDiv.innerHTML =
-    `<div><span id="message">There is a cache here.  It has a token of ${rectPoints}.</span></div>
+    `<div><span id="message">There is a cache at ${x},${y}.  It has a token of ${rectPoints}.</span></div>
 <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
 
   // Clicking the button decrements the cache's value and increments the player's points
@@ -84,6 +85,7 @@ function spawnCache(x: number, y: number) {
         console.log(`You have no token.  Picking up token of ${rectPoints}`);
         heldToken = rectPoints;
         statusPanelDiv.innerHTML = `${heldToken}`;
+        rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           "There is a cache here.  Currently there is no token.";
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
@@ -147,18 +149,24 @@ function spawnCache(x: number, y: number) {
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cache here.  It has a token of ${rectPoints}`;
+        popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = false;
       } else {
         console.log("Player has no token.  Cannot store anything");
       }
     },
   );
   rect.bindPopup(() => {
-    checkButtons(popupDiv, rectPoints);
+    checkButtons(popupDiv, rectPoints, x, y);
     return popupDiv;
   });
 }
 
-function checkButtons(div: HTMLDivElement, rectPoints: number | null) {
+function checkButtons(
+  div: HTMLDivElement,
+  rectPoints: number | null,
+  x: number,
+  y: number,
+) {
   const poke = div.querySelector<HTMLButtonElement>("#poke")!;
   const craft = div.querySelector<HTMLButtonElement>("#craft")!;
   const store = div.querySelector<HTMLButtonElement>("#store")!;
@@ -166,6 +174,10 @@ function checkButtons(div: HTMLDivElement, rectPoints: number | null) {
   poke.disabled = true;
   craft.disabled = true;
   store.disabled = true;
+
+  if (Math.hypot(-x, -y) > 3) {
+    return;
+  }
 
   if (rectPoints) {
     poke.disabled = false;
@@ -178,6 +190,13 @@ function checkButtons(div: HTMLDivElement, rectPoints: number | null) {
   }
 }
 
-spawnCache(2, 1);
-spawnCache(5, 3);
-spawnCache(6, 0);
+leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 100 }).addTo(map); // Visual indicator of obtainable caches
+// Look around the player's neighborhood for caches to spawn
+for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
+  for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
+    // If location i,j is lucky enough, spawn a cache!
+    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
+      spawnCache(i, j);
+    }
+  }
+}
