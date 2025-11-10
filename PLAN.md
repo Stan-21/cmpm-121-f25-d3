@@ -1,8 +1,8 @@
-# D3: {game title goes here}
+# D3: World of Bits
 
 ## Game Design Vision
 
-{a few-sentence description of the game mechanics}
+The vision for this game is to create a mashup of 2048 and Pokemon Go. Players would go around collecting tokens from cache's. These tokens could be combined with tokens of the same value to create a single token with double the value. The goal of the game would be to create a token of the biggest value.
 
 ## Technologies
 
