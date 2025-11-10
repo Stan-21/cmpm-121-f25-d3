@@ -99,18 +99,12 @@ function spawnCell(x: number, y: number) {
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = false;
       } else if (rectPoints) {
-        console.log(
-          `You have a token in your inventory.  Swapping inventory with cell`,
-        );
-        const temp = heldToken;
-        heldToken = rectPoints;
-        rectPoints = temp;
-        statusPanelDiv.innerHTML = `${heldToken}`;
-        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
+        rectPoints = swapToken(rectPoints, popupDiv, x, y);
       } else {
         console.log("There is nothing here that could be poked!");
       }
+      checkColor(rect, rectPoints);
+      checkButtons(popupDiv, rectPoints, x, y);
     },
   );
 
@@ -133,6 +127,8 @@ function spawnCell(x: number, y: number) {
       } else {
         console.log(`Cannot craft!`);
       }
+      checkColor(rect, rectPoints);
+      checkButtons(popupDiv, rectPoints, x, y);
     },
   );
 
@@ -140,15 +136,7 @@ function spawnCell(x: number, y: number) {
     "click",
     () => {
       if (heldToken && rectPoints) {
-        console.log(
-          `You have a token in your inventory.  Swapping inventory with cell`,
-        );
-        const temp = heldToken;
-        heldToken = rectPoints;
-        rectPoints = temp;
-        statusPanelDiv.innerHTML = `${heldToken}`;
-        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
+        rectPoints = swapToken(rectPoints, popupDiv, x, y);
       } else if (heldToken) {
         console.log(`Storing token into cell`);
         rectPoints = heldToken;
@@ -160,13 +148,33 @@ function spawnCell(x: number, y: number) {
       } else {
         console.log("Player has no token.  Cannot store anything");
       }
+
+      checkColor(rect, rectPoints);
+      checkButtons(popupDiv, rectPoints, x, y);
     },
   );
+
   rect.bindPopup(() => {
-    checkColor(rect, rectPoints);
-    checkButtons(popupDiv, rectPoints, x, y);
     return popupDiv;
   });
+}
+
+function swapToken(
+  rectPoints: number | null,
+  div: HTMLDivElement,
+  x: number,
+  y: number,
+) {
+  console.log(
+    `You have a token in your inventory.  Swapping inventory with cell`,
+  );
+  const temp = heldToken;
+  heldToken = rectPoints;
+  rectPoints = temp;
+  statusPanelDiv.innerHTML = `${heldToken}`;
+  div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+    `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
+  return rectPoints;
 }
 
 function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
