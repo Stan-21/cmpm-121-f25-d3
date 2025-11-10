@@ -21,7 +21,7 @@ const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);
 
-let heldToken: number | null = 1;
+let heldToken: number | null = 2;
 
 const statusPanelDiv = document.createElement("div");
 statusPanelDiv.id = "statusPanel";
@@ -37,8 +37,8 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
-const NEIGHBORHOOD_SIZE = 8;
-const CACHE_SPAWN_PROBABILITY = 0.1;
+const NEIGHBORHOOD_SIZE = 16;
+const CELL_SPAWN_PROBABILITY = 0.5;
 
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
@@ -60,21 +60,30 @@ leaflet
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
 
-function spawnCache(x: number, y: number) {
+function spawnCell(x: number, y: number) {
   const origin = CLASSROOM_LATLNG;
   const bounds = leaflet.latLngBounds([
     [origin.lat + x * TILE_DEGREES, origin.lng + y * TILE_DEGREES],
     [origin.lat + (x + 1) * TILE_DEGREES, origin.lng + (y + 1) * TILE_DEGREES],
   ]);
 
-  const rect = leaflet.rectangle(bounds).addTo(map);
+  const possibleStartingNum = [0, 2, 4, 8, 16];
 
-  let rectPoints: number | null = Math.ceil(
-    luck([x, y, "initialValue"].toString()) * 4,
+  let rectPoints: number | null = possibleStartingNum[
+    Math.floor(
+      luck([x, y, "initialValue"].toString()) * 4,
+    )
+  ];
+
+  const rect = leaflet.rectangle(bounds, { color: "#ff7800", weight: 3 }).addTo(
+    map,
   );
+
+  checkColor(rect, rectPoints);
+
   const popupDiv = document.createElement("div");
   popupDiv.innerHTML =
-    `<div><span id="message">There is a cache at ${x},${y}.  It has a token of ${rectPoints}.</span></div>
+    `<div><span id="message">There is a cell at ${x},${y}.  It has a token of ${rectPoints}.</span></div>
 <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
@@ -86,19 +95,19 @@ function spawnCache(x: number, y: number) {
         statusPanelDiv.innerHTML = `${heldToken}`;
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cache at ${x},${y}.  Currently there is no token.`;
+          `There is a cell at ${x},${y}.  Currently there is no token.`;
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = false;
       } else if (rectPoints) {
         console.log(
-          `You have a token in your inventory.  Swapping inventory with cache`,
+          `You have a token in your inventory.  Swapping inventory with cell`,
         );
         const temp = heldToken;
         heldToken = rectPoints;
         rectPoints = temp;
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cache at ${x},${y}.  It has a token of ${rectPoints}`;
+          `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
       } else {
         console.log("There is nothing here that could be poked!");
       }
@@ -116,10 +125,11 @@ function spawnCache(x: number, y: number) {
         );
         rectPoints! *= 2;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cache at ${x},${y}. It has a token of ${rectPoints}.`;
+          `There is a cell at ${x},${y}. It has a token of ${rectPoints}.`;
         heldToken = null;
         statusPanelDiv.innerText = `${heldToken}`;
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = true;
+        checkColor(rect, rectPoints);
       } else {
         console.log(`Cannot craft!`);
       }
@@ -131,21 +141,21 @@ function spawnCache(x: number, y: number) {
     () => {
       if (heldToken && rectPoints) {
         console.log(
-          `You have a token in your inventory.  Swapping inventory with cache`,
+          `You have a token in your inventory.  Swapping inventory with cell`,
         );
         const temp = heldToken;
         heldToken = rectPoints;
         rectPoints = temp;
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cache at ${x},${y}.  It has a token of ${rectPoints}`;
+          `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
       } else if (heldToken) {
-        console.log(`Storing token into cache`);
+        console.log(`Storing token into cell`);
         rectPoints = heldToken;
         heldToken = null;
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cache at ${x},${y}.  It has a token of ${rectPoints}`;
+          `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = false;
       } else {
         console.log("Player has no token.  Cannot store anything");
@@ -153,9 +163,35 @@ function spawnCache(x: number, y: number) {
     },
   );
   rect.bindPopup(() => {
+    checkColor(rect, rectPoints);
     checkButtons(popupDiv, rectPoints, x, y);
     return popupDiv;
   });
+}
+
+function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
+  if (rectPoints == 0) {
+    rectPoints = null;
+    rect.setStyle({ color: "#bdac97" });
+  } else if (rectPoints == 2) {
+    rect.setStyle({ color: "#eee4da" });
+  } else if (rectPoints == 4) {
+    rect.setStyle({ color: "#ebd8b6" });
+  } else if (rectPoints == 8) {
+    rect.setStyle({ color: "#f3b177" });
+  } else if (rectPoints == 16) {
+    rect.setStyle({ color: "#f69360" });
+  }
+
+  if (rectPoints != null) {
+    const tooltip = leaflet.tooltip({
+      permanent: true,
+      direction: "center",
+    }).setContent(rectPoints!.toString());
+    rect.bindTooltip(tooltip);
+  } else {
+    rect.unbindTooltip();
+  }
 }
 
 function checkButtons(
@@ -188,12 +224,10 @@ function checkButtons(
 }
 
 leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 200 }).addTo(map); // Visual indicator of obtainable caches
-// Look around the player's neighborhood for caches to spawn
 for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
   for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
-    // If location i,j is lucky enough, spawn a cache!
-    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-      spawnCache(i, j);
+    if (luck([i, j].toString()) < CELL_SPAWN_PROBABILITY) {
+      spawnCell(i, j);
     }
   }
 }

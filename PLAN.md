@@ -4,6 +4,13 @@
 
 The vision for this game is to create a mashup of 2048 and Pokemon Go. Players would go around collecting tokens from cache's. These tokens could be combined with tokens of the same value to create a single token with double the value. The goal of the game would be to create a token of the biggest value.
 
+## Designer Vision
+
+I understand Adam's idea for the starter code to not push us around and to kill it, but there are still some mechanics / ideas that I would like to keep.
+
+- I would like for a popup menu to exist so players would have options on what to do and so the gameplay isn't just tapping around the screen.
+- I feel that a complete grid for the entire map would make things look too cluttered. As an alternative, I increased the spawnrate for cells, but made it so some cells contain no tokens.
+
 ## Technologies
 
 - TypeScript for most game code, little to no explicit HTML, and all CSS collected in common `style.css` file
@@ -31,3 +38,4 @@ Key technical challenge: Can you assemble a map-based user interface using the L
 - [x] use loops to draw a whole grid of cells on the map
 - [x] player can only collect from cells within a certain range
 - [x] ensure consistent cell generation between reloads (might be unecessary)
+- [ ] killing the starter code
