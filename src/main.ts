@@ -83,7 +83,7 @@ function spawnCell(x: number, y: number) {
 
   const popupDiv = document.createElement("div");
   popupDiv.innerHTML =
-    `<div><span id="message">There is a cell at ${x},${y}.  It has a token of ${rectPoints}.</span></div>
+    `<div><span id="message">There is a cell at ${x},${y}.</span></div>
 <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
@@ -95,7 +95,7 @@ function spawnCell(x: number, y: number) {
         statusPanelDiv.innerHTML = `${heldToken}`;
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.  Currently there is no token.`;
+          `There is a cell at ${x},${y}.`;
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = false;
       } else if (rectPoints) {
@@ -119,7 +119,7 @@ function spawnCell(x: number, y: number) {
         );
         rectPoints! *= 2;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}. It has a token of ${rectPoints}.`;
+          `There is a cell at ${x},${y}.`;
         heldToken = null;
         statusPanelDiv.innerText = `${heldToken}`;
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = true;
@@ -143,7 +143,7 @@ function spawnCell(x: number, y: number) {
         heldToken = null;
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
+          `There is a cell at ${x},${y}.`;
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = false;
       } else {
         console.log("Player has no token.  Cannot store anything");
@@ -155,6 +155,7 @@ function spawnCell(x: number, y: number) {
   );
 
   rect.bindPopup(() => {
+    checkButtons(popupDiv, rectPoints, x, y);
     return popupDiv;
   });
 }
@@ -173,12 +174,12 @@ function swapToken(
   rectPoints = temp;
   statusPanelDiv.innerHTML = `${heldToken}`;
   div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-    `There is a cell at ${x},${y}.  It has a token of ${rectPoints}`;
+    `There is a cell at ${x},${y}.`;
   return rectPoints;
 }
 
 function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
-  if (rectPoints == 0) {
+  if ((rectPoints == 0) || (!rectPoints)) {
     rectPoints = null;
     rect.setStyle({ color: "#bdac97" });
   } else if (rectPoints == 2) {
@@ -189,6 +190,8 @@ function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
     rect.setStyle({ color: "#f3b177" });
   } else if (rectPoints == 16) {
     rect.setStyle({ color: "#f69360" });
+  } else {
+    rect.setStyle({ color: "red" });
   }
 
   if (rectPoints != null) {

@@ -10,6 +10,7 @@ I understand Adam's idea for the starter code to not push us around and to kill 
 
 - I would like for a popup menu to exist so players would have options on what to do and so the gameplay isn't just tapping around the screen.
 - I feel that a complete grid for the entire map would make things look too cluttered. As an alternative, I increased the spawnrate for cells, but made it so some cells contain no tokens.
+- I also liked the use of the word "poke" for grabbing tokens. I just felt that it was a fun and whimsical word to describe the action, but if needed I can change the word to differentiate from the starter code.
 
 ## Technologies
 
