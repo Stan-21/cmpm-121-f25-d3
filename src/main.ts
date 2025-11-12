@@ -17,16 +17,36 @@ controlPanelDiv.id = "controlPanel";
 controlPanelDiv.innerHTML = `<h1>D3: World of Bits</h1>`;
 document.body.append(controlPanelDiv);
 
+const upButton = document.createElement("button");
+upButton.innerHTML = `up`;
+controlPanelDiv.append(upButton);
+
+const downButton = document.createElement("button");
+downButton.innerHTML = `down`;
+controlPanelDiv.append(downButton);
+
+const leftButton = document.createElement("button");
+leftButton.innerHTML = `left`;
+controlPanelDiv.append(leftButton);
+
+const rightButton = document.createElement("button");
+rightButton.innerHTML = `right`;
+controlPanelDiv.append(rightButton);
+
+const wrapDiv = document.createElement("div");
+wrapDiv.id = "wrapDiv";
+document.body.append(wrapDiv);
+
 const mapDiv = document.createElement("div");
 mapDiv.id = "map";
-document.body.append(mapDiv);
+wrapDiv.append(mapDiv);
 
 let heldToken: number | null = 2;
 
 const statusPanelDiv = document.createElement("div");
 statusPanelDiv.id = "statusPanel";
 statusPanelDiv.innerText = `${heldToken}`;
-document.body.append(statusPanelDiv);
+wrapDiv.append(statusPanelDiv);
 
 // Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
@@ -37,7 +57,7 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
-const NEIGHBORHOOD_SIZE = 16;
+const NEIGHBORHOOD_SIZE = 8;
 const CELL_SPAWN_PROBABILITY = 0.5;
 
 const map = leaflet.map(mapDiv, {

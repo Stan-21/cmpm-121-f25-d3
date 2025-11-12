@@ -4,9 +4,17 @@
 
 #statusPanel {
   padding: 1rem;
+  border: 2px solid black;
+  width: 30%;
 }
 
 #map {
   width: 70%;
   height: 80vh;
+  border: 2px solid black;
+}
+
+#wrapDiv {
+  display: flex;
+  gap: 5px;
 }

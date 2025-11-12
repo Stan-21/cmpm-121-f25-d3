@@ -45,7 +45,7 @@ Key technical challenge: Can you assemble a map-based user interface using the L
 
 Key technical challenge: Can you assemble a system to simulate player movement around a map?
 
-- [ ] create a user interface to move the player (4 directional buttons)
+- [x] create a user interface to move the player (4 directional buttons)
 - [ ] when buttons are clicked, move the player marker in the respective direction
 - [ ] set player location to null island
 - [ ] create helper function to convert between grid coordinates and latitude / longitude
