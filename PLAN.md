@@ -39,4 +39,16 @@ Key technical challenge: Can you assemble a map-based user interface using the L
 - [x] use loops to draw a whole grid of cells on the map
 - [x] player can only collect from cells within a certain range
 - [x] ensure consistent cell generation between reloads (might be unecessary)
-- [ ] killing the starter code
+- [x] killing the starter code
+
+## D3.b: Globe-spanning Gameplay (player movement and win condition)
+
+Key technical challenge: Can you assemble a system to simulate player movement around a map?
+
+- [ ] create a user interface to move the player (4 directional buttons)
+- [ ] when buttons are clicked, move the player marker in the respective direction
+- [ ] set player location to null island
+- [ ] create helper function to convert between grid coordinates and latitude / longitude
+- [ ] when the map is scrolled generate cells again using moveend event
+- [ ] make sure that cells are memoryless (might be unnecessary)
+- [ ] add a victory message when player crafts a certain token value (128)
