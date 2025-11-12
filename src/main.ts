@@ -56,7 +56,7 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
-const NEIGHBORHOOD_SIZE = 8;
+const NEIGHBORHOOD_SIZE = 2;
 const CELL_SPAWN_PROBABILITY = 0.5;
 
 const map = leaflet.map(mapDiv, {
@@ -79,9 +79,10 @@ leaflet
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
 
+const featureGroup = leaflet.featureGroup().addTo(map);
+
 function spawnCell(x: number, y: number) {
   const origin = map.getCenter();
-  console.log(origin);
   const bounds = leaflet.latLngBounds([
     [origin.lat + x * TILE_DEGREES, origin.lng + y * TILE_DEGREES],
     [origin.lat + (x + 1) * TILE_DEGREES, origin.lng + (y + 1) * TILE_DEGREES],
@@ -101,6 +102,8 @@ function spawnCell(x: number, y: number) {
 
   rect.addTo(map);
 
+  featureGroup.addLayer(rect);
+
   checkColor(rect, rectPoints);
 
   const popupDiv = document.createElement("div");
@@ -112,7 +115,7 @@ function spawnCell(x: number, y: number) {
     "click",
     () => {
       if (heldToken == null) {
-        console.log(`You have no token.  Picking up token of ${rectPoints}`);
+        //console.log(`You have no token.  Picking up token of ${rectPoints}`);
         heldToken = rectPoints;
         statusPanelDiv.innerHTML = `${heldToken}`;
         rectPoints = null;
@@ -123,7 +126,7 @@ function spawnCell(x: number, y: number) {
       } else if (rectPoints) {
         rectPoints = swapToken(rectPoints, popupDiv, x, y);
       } else {
-        console.log("There is nothing here that could be poked!");
+        //console.log("There is nothing here that could be poked!");
       }
       checkColor(rect, rectPoints);
       checkButtons(popupDiv, rectPoints, x, y);
@@ -134,11 +137,11 @@ function spawnCell(x: number, y: number) {
     "click",
     () => {
       if (heldToken == rectPoints) {
-        console.log(
+        /*console.log(
           `Crafting a token of value ${heldToken} to create a ${
             heldToken! * 2
           } token!`,
-        );
+        );*/
         rectPoints! *= 2;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${x},${y}.`;
@@ -147,11 +150,11 @@ function spawnCell(x: number, y: number) {
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = true;
         checkColor(rect, rectPoints);
         if (rectPoints == 32) {
-          console.log("You win!");
+          //console.log("You win!");
           statusPanelDiv.innerText = `You completed the tutorial!  You win!`;
         }
       } else {
-        console.log(`Cannot craft!`);
+        //console.log(`Cannot craft!`);
       }
       checkColor(rect, rectPoints);
       checkButtons(popupDiv, rectPoints, x, y);
@@ -164,7 +167,7 @@ function spawnCell(x: number, y: number) {
       if (heldToken && rectPoints) {
         rectPoints = swapToken(rectPoints, popupDiv, x, y);
       } else if (heldToken) {
-        console.log(`Storing token into cell`);
+        //console.log(`Storing token into cell`);
         rectPoints = heldToken;
         heldToken = null;
         statusPanelDiv.innerHTML = `${heldToken}`;
@@ -172,7 +175,7 @@ function spawnCell(x: number, y: number) {
           `There is a cell at ${x},${y}.`;
         popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = false;
       } else {
-        console.log("Player has no token.  Cannot store anything");
+        //console.log("Player has no token.  Cannot store anything");
       }
 
       checkColor(rect, rectPoints);
@@ -192,9 +195,9 @@ function swapToken(
   x: number,
   y: number,
 ) {
-  console.log(
+  /*console.log(
     `You have a token in your inventory.  Swapping inventory with cell`,
-  );
+  );*/
   const temp = heldToken;
   heldToken = rectPoints;
   rectPoints = temp;
@@ -204,17 +207,23 @@ function swapToken(
   return rectPoints;
 }
 
-leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 200 }).addTo(map); // Visual indicator of obtainable caches
-
 map.addEventListener("moveend", () => {
-  console.log("done moving", map.getCenter());
+  featureGroup.clearLayers();
+  generateCells();
 });
 
 generateCells();
 function generateCells() {
+  const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 200 })
+    .addTo(map); // Visual indicator of obtainable caches
+  featureGroup.addLayer(radius);
+  const x = latLngToGrid(map.getCenter().lng);
+  const y = latLngToGrid(map.getCenter().lat);
   for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
     for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
-      if (luck([i, j].toString()) < CELL_SPAWN_PROBABILITY) {
+      console.log(x - i);
+      console.log(luck([x - i, y - j].toString()));
+      if (luck([x - i, y - j].toString()) < CELL_SPAWN_PROBABILITY) {
         spawnCell(i, j);
       }
     }
@@ -294,8 +303,8 @@ function processMovement(
   return [loc.lat, loc.lng];
 }
 
-function _latLngToGrid(x: number) {
-  return x / 0.0001;
+function latLngToGrid(x: number) {
+  return Math.round(x / 0.0001);
 }
 
 function _gridToLatLng(x: number) { // (0, 0) will return 0, 0
