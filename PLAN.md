@@ -51,3 +51,5 @@ Key technical challenge: Can you assemble a system to simulate player movement a
 - [x] when the map is scrolled generate cells again using moveend event
 - [x] make sure that cells are memoryless (might be unnecessary)
 - [x] add a victory message when player crafts a certain token value (128)
+
+NOTE: The commented out bits are for future plans. I plan on creating a type of "chat box" and everytime the player interacts with something that interaction is logged into the chatbox on the right.

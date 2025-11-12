@@ -53,14 +53,13 @@ const CLASSROOM_LATLNG = leaflet.latLng(
   -122.05670,
 );
 
-// On tile 369979, -1220567
-
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD_SIZEX = 16;
 const NEIGHBORHOOD_SIZEY = 8;
 const CELL_SPAWN_PROBABILITY = 0.3;
+const possibleStartingNum = [0, 2, 4, 8, 16];
 
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
@@ -79,13 +78,17 @@ leaflet
   })
   .addTo(map);
 
+map.addEventListener("moveend", () => {
+  featureGroup.clearLayers();
+  generateCells();
+});
+
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
 
 const featureGroup = leaflet.featureGroup().addTo(map);
 
 function spawnCell(x: number, y: number) {
-  console.log(x, y);
   const bounds = leaflet.latLngBounds([
     [
       gridToLatLng(y),
@@ -97,13 +100,10 @@ function spawnCell(x: number, y: number) {
     ],
   ]);
 
-  console.log(bounds);
-
-  const possibleStartingNum = [0, 2, 4, 8, 16];
-
   let rectPoints: number | null = possibleStartingNum[
     Math.floor(
-      luck([x, y, "initialValue"].toString()) * 4,
+      luck([x, y, "initialValue"].toString()) *
+        (possibleStartingNum.length - 1),
     )
   ];
 
@@ -112,7 +112,6 @@ function spawnCell(x: number, y: number) {
   );
 
   rect.addTo(map);
-
   featureGroup.addLayer(rect);
 
   checkColor(rect, rectPoints);
@@ -132,8 +131,6 @@ function spawnCell(x: number, y: number) {
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${x},${y}.`;
-        popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = true;
-        popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = false;
       } else if (rectPoints) {
         rectPoints = swapToken(rectPoints, popupDiv, x, y);
       } else {
@@ -154,12 +151,10 @@ function spawnCell(x: number, y: number) {
           } token!`,
         );*/
         rectPoints! *= 2;
-        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.`;
         heldToken = null;
         statusPanelDiv.innerText = `${heldToken}`;
-        popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = true;
-        checkColor(rect, rectPoints);
+        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
+          `There is a cell at ${x},${y}.`;
         if (rectPoints == 32) {
           //console.log("You win!");
           statusPanelDiv.innerText = `You completed the tutorial!  You win!`;
@@ -184,7 +179,6 @@ function spawnCell(x: number, y: number) {
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${x},${y}.`;
-        popupDiv.querySelector<HTMLButtonElement>("#poke")!.disabled = false;
       } else {
         //console.log("Player has no token.  Cannot store anything");
       }
@@ -218,12 +212,8 @@ function swapToken(
   return rectPoints;
 }
 
-map.addEventListener("moveend", () => {
-  featureGroup.clearLayers();
-  generateCells();
-});
-
 generateCells();
+
 function generateCells() {
   const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
     .addTo(map); // Visual indicator of obtainable caches
@@ -237,7 +227,6 @@ function generateCells() {
       }
     }
   }
-  console.log("done spawning");
 }
 
 function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
@@ -281,7 +270,6 @@ function checkButtons(
   craft.disabled = true;
   store.disabled = true;
 
-  console.log(x, y);
   if (
     Math.hypot(
       latLngToGrid(playerMarker.getLatLng().lng) - x,
