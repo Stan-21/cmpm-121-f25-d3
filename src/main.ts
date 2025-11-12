@@ -262,3 +262,27 @@ for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
     }
   }
 }
+
+upButton.addEventListener("click", () => {
+  playerMarker.setLatLng(
+    leaflet.latLng(36.998036938057016, -122.05753507501151),
+  );
+});
+
+downButton.addEventListener("click", () => {
+  playerMarker.setLatLng(
+    leaflet.latLng(36.997336938057016, -122.05753507501151),
+  );
+});
+
+leftButton.addEventListener("click", () => {
+  playerMarker.setLatLng(
+    leaflet.latLng(36.997936938057016, -122.05753507501151),
+  );
+});
+
+rightButton.addEventListener("click", () => {
+  playerMarker.setLatLng(
+    leaflet.latLng(36.997936938057016, -122.05700507501151),
+  );
+});
