@@ -85,17 +85,15 @@ playerMarker.bindTooltip("Current location!");
 const featureGroup = leaflet.featureGroup().addTo(map);
 
 function spawnCell(x: number, y: number) {
-  x = _gridToLatLng(x);
-  y = _gridToLatLng(y);
   console.log(x, y);
   const bounds = leaflet.latLngBounds([
     [
-      y,
-      x,
+      gridToLatLng(y),
+      gridToLatLng(x),
     ],
     [
-      y + TILE_DEGREES,
-      x + TILE_DEGREES,
+      gridToLatLng(y) + TILE_DEGREES,
+      gridToLatLng(x) + TILE_DEGREES,
     ],
   ]);
 
@@ -227,7 +225,7 @@ map.addEventListener("moveend", () => {
 
 generateCells();
 function generateCells() {
-  const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 200 })
+  const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
     .addTo(map); // Visual indicator of obtainable caches
   featureGroup.addLayer(radius);
   const x = latLngToGrid(map.getCenter().lng);
@@ -283,7 +281,13 @@ function checkButtons(
   craft.disabled = true;
   store.disabled = true;
 
-  if (Math.hypot(-x, -y) > 4.5) {
+  console.log(x, y);
+  if (
+    Math.hypot(
+      latLngToGrid(playerMarker.getLatLng().lng) - x,
+      latLngToGrid(playerMarker.getLatLng().lat) - y,
+    ) > 4.5
+  ) {
     return;
   }
 
@@ -319,6 +323,6 @@ function latLngToGrid(x: number) {
   return Math.round(x / 0.0001);
 }
 
-function _gridToLatLng(x: number) { // (0, 0) will return 0, 0
+function gridToLatLng(x: number) { // (0, 0) will return 0, 0
   return x * 0.0001;
 }
