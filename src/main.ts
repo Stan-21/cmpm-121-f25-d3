@@ -17,21 +17,18 @@ controlPanelDiv.id = "controlPanel";
 controlPanelDiv.innerHTML = `<h1>D3: World of Bits</h1>`;
 document.body.append(controlPanelDiv);
 
-const upButton = document.createElement("button");
-upButton.innerHTML = `up`;
-controlPanelDiv.append(upButton);
+const directions = ["up", "down", "left", "right"];
 
-const downButton = document.createElement("button");
-downButton.innerHTML = `down`;
-controlPanelDiv.append(downButton);
+directions.forEach((item) => {
+  const directionButton = document.createElement("button");
+  directionButton.innerHTML = item;
+  controlPanelDiv.append(directionButton);
 
-const leftButton = document.createElement("button");
-leftButton.innerHTML = `left`;
-controlPanelDiv.append(leftButton);
-
-const rightButton = document.createElement("button");
-rightButton.innerHTML = `right`;
-controlPanelDiv.append(rightButton);
+  directionButton.addEventListener("click", () => {
+    playerMarker.setLatLng(processMovement(playerMarker.getLatLng(), item));
+    map.setView(playerMarker.getLatLng());
+  });
+});
 
 const wrapDiv = document.createElement("div");
 wrapDiv.id = "wrapDiv";
@@ -50,9 +47,11 @@ wrapDiv.append(statusPanelDiv);
 
 // Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
-  36.997936938057016,
-  -122.05703507501151,
+  36.99790,
+  -122.05670,
 );
+
+// On tile 369979, -1220567
 
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
@@ -81,7 +80,8 @@ const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
 
 function spawnCell(x: number, y: number) {
-  const origin = CLASSROOM_LATLNG;
+  const origin = map.getCenter();
+  console.log(origin);
   const bounds = leaflet.latLngBounds([
     [origin.lat + x * TILE_DEGREES, origin.lng + y * TILE_DEGREES],
     [origin.lat + (x + 1) * TILE_DEGREES, origin.lng + (y + 1) * TILE_DEGREES],
@@ -98,6 +98,8 @@ function spawnCell(x: number, y: number) {
   const rect = leaflet.rectangle(bounds, { color: "#ff7800", weight: 3 }).addTo(
     map,
   );
+
+  rect.addTo(map);
 
   checkColor(rect, rectPoints);
 
@@ -144,6 +146,10 @@ function spawnCell(x: number, y: number) {
         statusPanelDiv.innerText = `${heldToken}`;
         popupDiv.querySelector<HTMLButtonElement>("#store")!.disabled = true;
         checkColor(rect, rectPoints);
+        if (rectPoints == 32) {
+          console.log("You win!");
+          statusPanelDiv.innerText = `You completed the tutorial!  You win!`;
+        }
       } else {
         console.log(`Cannot craft!`);
       }
@@ -196,6 +202,23 @@ function swapToken(
   div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
     `There is a cell at ${x},${y}.`;
   return rectPoints;
+}
+
+leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 200 }).addTo(map); // Visual indicator of obtainable caches
+
+map.addEventListener("moveend", () => {
+  console.log("done moving", map.getCenter());
+});
+
+generateCells();
+function generateCells() {
+  for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
+    for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
+      if (luck([i, j].toString()) < CELL_SPAWN_PROBABILITY) {
+        spawnCell(i, j);
+      }
+    }
+  }
 }
 
 function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
@@ -254,35 +277,27 @@ function checkButtons(
   }
 }
 
-leaflet.circleMarker(CLASSROOM_LATLNG, { radius: 200 }).addTo(map); // Visual indicator of obtainable caches
-for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
-  for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
-    if (luck([i, j].toString()) < CELL_SPAWN_PROBABILITY) {
-      spawnCell(i, j);
-    }
+function processMovement(
+  loc: leaflet.LatLng,
+  dir: string,
+): leaflet.LatLng | [number, number] {
+  switch (dir) {
+    case "up":
+      return [loc.lat + 0.0001, loc.lng];
+    case "down":
+      return [loc.lat - 0.0001, loc.lng];
+    case "left":
+      return [loc.lat, loc.lng - 0.0001];
+    case "right":
+      return [loc.lat, loc.lng + 0.0001];
   }
+  return [loc.lat, loc.lng];
 }
 
-upButton.addEventListener("click", () => {
-  playerMarker.setLatLng(
-    leaflet.latLng(36.998036938057016, -122.05753507501151),
-  );
-});
+function _latLngToGrid(x: number) {
+  return x / 0.0001;
+}
 
-downButton.addEventListener("click", () => {
-  playerMarker.setLatLng(
-    leaflet.latLng(36.997336938057016, -122.05753507501151),
-  );
-});
-
-leftButton.addEventListener("click", () => {
-  playerMarker.setLatLng(
-    leaflet.latLng(36.997936938057016, -122.05753507501151),
-  );
-});
-
-rightButton.addEventListener("click", () => {
-  playerMarker.setLatLng(
-    leaflet.latLng(36.997936938057016, -122.05700507501151),
-  );
-});
+function _gridToLatLng(x: number) { // (0, 0) will return 0, 0
+  return x * 0.0001;
+}

@@ -46,9 +46,8 @@ Key technical challenge: Can you assemble a map-based user interface using the L
 Key technical challenge: Can you assemble a system to simulate player movement around a map?
 
 - [x] create a user interface to move the player (4 directional buttons)
-- [ ] when buttons are clicked, move the player marker in the respective direction
-- [ ] set player location to null island
-- [ ] create helper function to convert between grid coordinates and latitude / longitude
+- [x] when buttons are clicked, move the player marker in the respective direction
+- [x] create helper function to convert between grid coordinates and latitude / longitude
 - [ ] when the map is scrolled generate cells again using moveend event
 - [ ] make sure that cells are memoryless (might be unnecessary)
-- [ ] add a victory message when player crafts a certain token value (128)
+- [x] add a victory message when player crafts a certain token value (128)
