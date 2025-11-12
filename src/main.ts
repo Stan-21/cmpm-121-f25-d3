@@ -26,6 +26,8 @@ directions.forEach((item) => {
 
   directionButton.addEventListener("click", () => {
     playerMarker.setLatLng(processMovement(playerMarker.getLatLng(), item));
+    featureGroup.clearLayers();
+    generateCells();
     map.setView(playerMarker.getLatLng());
   });
 });
@@ -56,8 +58,9 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
-const NEIGHBORHOOD_SIZE = 2;
-const CELL_SPAWN_PROBABILITY = 0.5;
+const NEIGHBORHOOD_SIZEX = 16;
+const NEIGHBORHOOD_SIZEY = 8;
+const CELL_SPAWN_PROBABILITY = 0.3;
 
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
@@ -82,11 +85,21 @@ playerMarker.bindTooltip("Current location!");
 const featureGroup = leaflet.featureGroup().addTo(map);
 
 function spawnCell(x: number, y: number) {
-  const origin = map.getCenter();
+  x = _gridToLatLng(x);
+  y = _gridToLatLng(y);
+  console.log(x, y);
   const bounds = leaflet.latLngBounds([
-    [origin.lat + x * TILE_DEGREES, origin.lng + y * TILE_DEGREES],
-    [origin.lat + (x + 1) * TILE_DEGREES, origin.lng + (y + 1) * TILE_DEGREES],
+    [
+      y,
+      x,
+    ],
+    [
+      y + TILE_DEGREES,
+      x + TILE_DEGREES,
+    ],
   ]);
+
+  console.log(bounds);
 
   const possibleStartingNum = [0, 2, 4, 8, 16];
 
@@ -219,15 +232,14 @@ function generateCells() {
   featureGroup.addLayer(radius);
   const x = latLngToGrid(map.getCenter().lng);
   const y = latLngToGrid(map.getCenter().lat);
-  for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
-    for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
-      console.log(x - i);
-      console.log(luck([x - i, y - j].toString()));
+  for (let i = -NEIGHBORHOOD_SIZEX; i < NEIGHBORHOOD_SIZEX; i++) {
+    for (let j = -NEIGHBORHOOD_SIZEY; j < NEIGHBORHOOD_SIZEY; j++) {
       if (luck([x - i, y - j].toString()) < CELL_SPAWN_PROBABILITY) {
-        spawnCell(i, j);
+        spawnCell(x - i, y - j);
       }
     }
   }
+  console.log("done spawning");
 }
 
 function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
