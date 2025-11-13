@@ -58,5 +58,7 @@ NOTE: The commented out bits are for future plans. I plan on creating a type of 
 
 Key technical challenge: How do you store cell data when cells are reloaded?
 
-- [ ] apply the Flyweight pattern not visible cells do not require storage (already implemented by default?)
-- [ ] apply the Memento pattern to remember state of cells when the player moves to a different location
+- [x] apply the Flyweight pattern not visible cells do not require storage (already implemented by default?)
+- [x] apply the Memento pattern to remember state of cells when the player moves to a different location
+
+NOTE: I don't think I used either pattern, I just followed the tips that Adam gave out and everything works? Cells off screen already don't require storage since they are cleared. State of cells are remembered through the use of maps.

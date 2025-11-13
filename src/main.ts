@@ -11,6 +11,13 @@ import "./_leafletWorkaround.ts"; // fixes for missing Leaflet images
 // Import our luck function
 import luck from "./_luck.ts";
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+const cellMap = new Map();
+
 // Create basic UI elements
 const controlPanelDiv = document.createElement("div");
 controlPanelDiv.id = "controlPanel";
@@ -56,9 +63,8 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
-const NEIGHBORHOOD_SIZEX = 16;
-const NEIGHBORHOOD_SIZEY = 8;
-const CELL_SPAWN_PROBABILITY = 0.3;
+const NEIGHBORHOOD = { x: 16, y: 8 };
+const CELL_SPAWN_PROBABILITY = 0.1;
 const possibleStartingNum = [0, 2, 4, 8, 16];
 
 const map = leaflet.map(mapDiv, {
@@ -88,24 +94,29 @@ playerMarker.bindTooltip("Current location!");
 
 const featureGroup = leaflet.featureGroup().addTo(map);
 
-function spawnCell(x: number, y: number) {
+function spawnCell(point: Point) {
   const bounds = leaflet.latLngBounds([
     [
-      gridToLatLng(y),
-      gridToLatLng(x),
+      gridToLatLng(point.y),
+      gridToLatLng(point.x),
     ],
     [
-      gridToLatLng(y) + TILE_DEGREES,
-      gridToLatLng(x) + TILE_DEGREES,
+      gridToLatLng(point.y) + TILE_DEGREES,
+      gridToLatLng(point.x) + TILE_DEGREES,
     ],
   ]);
 
-  let rectPoints: number | null = possibleStartingNum[
-    Math.floor(
-      luck([x, y, "initialValue"].toString()) *
-        (possibleStartingNum.length - 1),
-    )
-  ];
+  let rectPoints: number | null;
+  if (cellMap.has(coordsToKey(point))) {
+    rectPoints = cellMap.get(coordsToKey(point));
+  } else {
+    rectPoints = possibleStartingNum[
+      Math.floor(
+        luck([point.x, point.y, "initialValue"].toString()) *
+          (possibleStartingNum.length - 1),
+      )
+    ];
+  }
 
   const rect = leaflet.rectangle(bounds, { color: "#ff7800", weight: 3 }).addTo(
     map,
@@ -118,7 +129,7 @@ function spawnCell(x: number, y: number) {
 
   const popupDiv = document.createElement("div");
   popupDiv.innerHTML =
-    `<div><span id="message">There is a cell at ${x},${y}.</span></div>
+    `<div><span id="message">There is a cell at ${point.x},${point.y}.</span></div>
 <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
@@ -130,14 +141,15 @@ function spawnCell(x: number, y: number) {
         statusPanelDiv.innerHTML = `${heldToken}`;
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.`;
+          `There is a cell at ${point.x},${point.y}.`;
       } else if (rectPoints) {
-        rectPoints = swapToken(rectPoints, popupDiv, x, y);
+        rectPoints = swapToken(rectPoints, popupDiv, point);
       } else {
         //console.log("There is nothing here that could be poked!");
       }
       checkColor(rect, rectPoints);
-      checkButtons(popupDiv, rectPoints, x, y);
+      checkButtons(popupDiv, rectPoints, point);
+      cellMap.set(coordsToKey(point), rectPoints);
     },
   );
 
@@ -154,7 +166,7 @@ function spawnCell(x: number, y: number) {
         heldToken = null;
         statusPanelDiv.innerText = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.`;
+          `There is a cell at ${point.x},${point.y}.`;
         if (rectPoints == 32) {
           //console.log("You win!");
           statusPanelDiv.innerText = `You completed the tutorial!  You win!`;
@@ -163,7 +175,8 @@ function spawnCell(x: number, y: number) {
         //console.log(`Cannot craft!`);
       }
       checkColor(rect, rectPoints);
-      checkButtons(popupDiv, rectPoints, x, y);
+      checkButtons(popupDiv, rectPoints, point);
+      cellMap.set(coordsToKey(point), rectPoints);
     },
   );
 
@@ -171,25 +184,26 @@ function spawnCell(x: number, y: number) {
     "click",
     () => {
       if (heldToken && rectPoints) {
-        rectPoints = swapToken(rectPoints, popupDiv, x, y);
+        rectPoints = swapToken(rectPoints, popupDiv, point);
       } else if (heldToken) {
         //console.log(`Storing token into cell`);
         rectPoints = heldToken;
         heldToken = null;
         statusPanelDiv.innerHTML = `${heldToken}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${x},${y}.`;
+          `There is a cell at ${point.x},${point.y}.`;
       } else {
         //console.log("Player has no token.  Cannot store anything");
       }
 
       checkColor(rect, rectPoints);
-      checkButtons(popupDiv, rectPoints, x, y);
+      checkButtons(popupDiv, rectPoints, point);
+      cellMap.set(coordsToKey(point), rectPoints);
     },
   );
 
   rect.bindPopup(() => {
-    checkButtons(popupDiv, rectPoints, x, y);
+    checkButtons(popupDiv, rectPoints, point);
     return popupDiv;
   });
 }
@@ -197,8 +211,7 @@ function spawnCell(x: number, y: number) {
 function swapToken(
   rectPoints: number | null,
   div: HTMLDivElement,
-  x: number,
-  y: number,
+  point: Point,
 ) {
   /*console.log(
     `You have a token in your inventory.  Swapping inventory with cell`,
@@ -208,7 +221,7 @@ function swapToken(
   rectPoints = temp;
   statusPanelDiv.innerHTML = `${heldToken}`;
   div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-    `There is a cell at ${x},${y}.`;
+    `There is a cell at ${point.x},${point.y}.`;
   return rectPoints;
 }
 
@@ -220,10 +233,10 @@ function generateCells() {
   featureGroup.addLayer(radius);
   const x = latLngToGrid(map.getCenter().lng);
   const y = latLngToGrid(map.getCenter().lat);
-  for (let i = -NEIGHBORHOOD_SIZEX; i < NEIGHBORHOOD_SIZEX; i++) {
-    for (let j = -NEIGHBORHOOD_SIZEY; j < NEIGHBORHOOD_SIZEY; j++) {
+  for (let i = -NEIGHBORHOOD.x; i < NEIGHBORHOOD.x; i++) {
+    for (let j = -NEIGHBORHOOD.y; j < NEIGHBORHOOD.y; j++) {
       if (luck([x - i, y - j].toString()) < CELL_SPAWN_PROBABILITY) {
-        spawnCell(x - i, y - j);
+        spawnCell({ x: x - i, y: y - j });
       }
     }
   }
@@ -259,8 +272,7 @@ function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
 function checkButtons(
   div: HTMLDivElement,
   rectPoints: number | null,
-  x: number,
-  y: number,
+  point: Point,
 ) {
   const poke = div.querySelector<HTMLButtonElement>("#poke")!;
   const craft = div.querySelector<HTMLButtonElement>("#craft")!;
@@ -272,8 +284,8 @@ function checkButtons(
 
   if (
     Math.hypot(
-      latLngToGrid(playerMarker.getLatLng().lng) - x,
-      latLngToGrid(playerMarker.getLatLng().lat) - y,
+      latLngToGrid(playerMarker.getLatLng().lng) - point.x,
+      latLngToGrid(playerMarker.getLatLng().lat) - point.y,
     ) > 4.5
   ) {
     return;
@@ -313,4 +325,8 @@ function latLngToGrid(x: number) {
 
 function gridToLatLng(x: number) { // (0, 0) will return 0, 0
   return x * 0.0001;
+}
+
+function coordsToKey(point: Point): string {
+  return point.x.toString() + point.y.toString();
 }
