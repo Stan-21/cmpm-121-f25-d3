@@ -16,8 +16,6 @@ interface Point {
   y: number;
 }
 
-const cellMap = new Map();
-
 // Create basic UI elements
 const controlPanelDiv = document.createElement("div");
 controlPanelDiv.id = "controlPanel";
@@ -94,6 +92,8 @@ playerMarker.bindTooltip("Current location!");
 
 const featureGroup = leaflet.featureGroup().addTo(map);
 
+const cellMap = new Map();
+
 function spawnCell(point: Point) {
   const bounds = leaflet.latLngBounds([
     [
@@ -132,6 +132,12 @@ function spawnCell(point: Point) {
     `<div><span id="message">There is a cell at ${point.x},${point.y}.</span></div>
 <button id="poke">poke</button><button id="craft">craft</button><button id = "store">store</button>`;
 
+  popupDiv.addEventListener("click", () => {
+    checkColor(rect, rectPoints);
+    checkButtons(popupDiv, rectPoints, point);
+    cellMap.set(coordsToKey(point), rectPoints);
+  });
+
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
     "click",
     () => {
@@ -147,9 +153,6 @@ function spawnCell(point: Point) {
       } else {
         //console.log("There is nothing here that could be poked!");
       }
-      checkColor(rect, rectPoints);
-      checkButtons(popupDiv, rectPoints, point);
-      cellMap.set(coordsToKey(point), rectPoints);
     },
   );
 
@@ -174,9 +177,6 @@ function spawnCell(point: Point) {
       } else {
         //console.log(`Cannot craft!`);
       }
-      checkColor(rect, rectPoints);
-      checkButtons(popupDiv, rectPoints, point);
-      cellMap.set(coordsToKey(point), rectPoints);
     },
   );
 
@@ -195,10 +195,6 @@ function spawnCell(point: Point) {
       } else {
         //console.log("Player has no token.  Cannot store anything");
       }
-
-      checkColor(rect, rectPoints);
-      checkButtons(popupDiv, rectPoints, point);
-      cellMap.set(coordsToKey(point), rectPoints);
     },
   );
 
