@@ -53,3 +53,10 @@ Key technical challenge: Can you assemble a system to simulate player movement a
 - [x] add a victory message when player crafts a certain token value (128)
 
 NOTE: The commented out bits are for future plans. I plan on creating a type of "chat box" and everytime the player interacts with something that interaction is logged into the chatbox on the right.
+
+## D3.c: Object persistence
+
+Key technical challenge: How do you store cell data when cells are reloaded?
+
+- [ ] apply the Flyweight pattern not visible cells do not require storage (already implemented by default?)
+- [ ] apply the Memento pattern to remember state of cells when the player moves to a different location
