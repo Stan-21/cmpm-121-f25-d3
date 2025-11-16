@@ -5,7 +5,10 @@
       "label": "Start Vite Dev Server",
       "type": "shell",
       "command": "deno",
-      "args": ["task", "dev"],
+      "args": [
+        "task",
+        "dev"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -23,7 +26,10 @@
       "label": "Build for Production",
       "type": "shell",
       "command": "deno",
-      "args": ["task", "build"],
+      "args": [
+        "task",
+        "build"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -36,7 +42,10 @@
       "label": "Preview Production Build",
       "type": "shell",
       "command": "deno",
-      "args": ["task", "preview"],
+      "args": [
+        "task",
+        "preview"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -49,7 +58,10 @@
       "label": "Lint Code",
       "type": "shell",
       "command": "deno",
-      "args": ["task", "lint"],
+      "args": [
+        "task",
+        "lint"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -62,7 +74,10 @@
       "label": "Format Code",
       "type": "shell",
       "command": "deno",
-      "args": ["task", "fmt"],
+      "args": [
+        "task",
+        "fmt"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -75,7 +90,10 @@
       "label": "CI Check (All Quality Checks + Build)",
       "type": "shell",
       "command": "deno",
-      "args": ["task", "ci"],
+      "args": [
+        "task",
+        "ci"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,

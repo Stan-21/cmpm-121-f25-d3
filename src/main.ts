@@ -16,13 +16,23 @@ interface Point {
   y: number;
 }
 
+type CellKey = string;
+type CellContents = number | null;
+
+interface Location {
+  lat: number;
+  lng: number;
+}
+
+type Direction = "up" | "down" | "left" | "right";
+
 // Create basic UI elements
 const controlPanelDiv = document.createElement("div");
 controlPanelDiv.id = "controlPanel";
 controlPanelDiv.innerHTML = `<h1>D3: World of Bits</h1>`;
 document.body.append(controlPanelDiv);
 
-const directions = ["up", "down", "left", "right"];
+const directions: Direction[] = ["up", "down", "left", "right"];
 
 directions.forEach((item) => {
   const directionButton = document.createElement("button");
@@ -30,7 +40,8 @@ directions.forEach((item) => {
   controlPanelDiv.append(directionButton);
 
   directionButton.addEventListener("click", () => {
-    playerMarker.setLatLng(processMovement(playerMarker.getLatLng(), item));
+    const { x, y } = processMovement(playerMarker.getLatLng(), item);
+    playerMarker.setLatLng({ lat: x, lng: y });
     featureGroup.clearLayers();
     generateCells();
     map.setView(playerMarker.getLatLng());
@@ -45,11 +56,11 @@ const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 wrapDiv.append(mapDiv);
 
-let heldToken: number | null = 2;
+let playerInventory: CellContents = 2;
 
 const statusPanelDiv = document.createElement("div");
 statusPanelDiv.id = "statusPanel";
-statusPanelDiv.innerText = `${heldToken}`;
+statusPanelDiv.innerText = `${playerInventory}`;
 wrapDiv.append(statusPanelDiv);
 
 // Our classroom location
@@ -92,7 +103,8 @@ playerMarker.bindTooltip("Current location!");
 
 const featureGroup = leaflet.featureGroup().addTo(map);
 
-const cellMap = new Map();
+// Flyweight pattern: key is intrinsic state (cell coordinates), value is extrinsic state (cell contents)
+const cellMap = new Map<CellKey, CellContents>();
 
 function spawnCell(point: Point) {
   const bounds = leaflet.latLngBounds([
@@ -106,9 +118,9 @@ function spawnCell(point: Point) {
     ],
   ]);
 
-  let rectPoints: number | null;
+  let rectPoints: CellContents;
   if (cellMap.has(coordsToKey(point))) {
-    rectPoints = cellMap.get(coordsToKey(point));
+    rectPoints = cellMap.get(coordsToKey(point))!;
   } else {
     rectPoints = possibleStartingNum[
       Math.floor(
@@ -141,10 +153,10 @@ function spawnCell(point: Point) {
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
     "click",
     () => {
-      if (heldToken == null) {
+      if (playerInventory == null) {
         //console.log(`You have no token.  Picking up token of ${rectPoints}`);
-        heldToken = rectPoints;
-        statusPanelDiv.innerHTML = `${heldToken}`;
+        playerInventory = rectPoints;
+        statusPanelDiv.innerHTML = `${playerInventory}`;
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
@@ -159,15 +171,15 @@ function spawnCell(point: Point) {
   popupDiv.querySelector<HTMLButtonElement>("#craft")!.addEventListener(
     "click",
     () => {
-      if (heldToken == rectPoints) {
+      if (playerInventory == rectPoints) {
         /*console.log(
           `Crafting a token of value ${heldToken} to create a ${
             heldToken! * 2
           } token!`,
         );*/
         rectPoints! *= 2;
-        heldToken = null;
-        statusPanelDiv.innerText = `${heldToken}`;
+        playerInventory = null;
+        statusPanelDiv.innerText = `${playerInventory}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
         if (rectPoints == 32) {
@@ -183,13 +195,13 @@ function spawnCell(point: Point) {
   popupDiv.querySelector<HTMLButtonElement>("#store")!.addEventListener(
     "click",
     () => {
-      if (heldToken && rectPoints) {
+      if (playerInventory && rectPoints) {
         rectPoints = swapToken(rectPoints, popupDiv, point);
-      } else if (heldToken) {
+      } else if (playerInventory) {
         //console.log(`Storing token into cell`);
-        rectPoints = heldToken;
-        heldToken = null;
-        statusPanelDiv.innerHTML = `${heldToken}`;
+        rectPoints = playerInventory;
+        playerInventory = null;
+        statusPanelDiv.innerHTML = `${playerInventory}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
       } else {
@@ -212,10 +224,10 @@ function swapToken(
   /*console.log(
     `You have a token in your inventory.  Swapping inventory with cell`,
   );*/
-  const temp = heldToken;
-  heldToken = rectPoints;
+  const temp = playerInventory;
+  playerInventory = rectPoints;
   rectPoints = temp;
-  statusPanelDiv.innerHTML = `${heldToken}`;
+  statusPanelDiv.innerHTML = `${playerInventory}`;
   div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
     `There is a cell at ${point.x},${point.y}.`;
   return rectPoints;
@@ -290,29 +302,28 @@ function checkButtons(
   if (rectPoints) {
     poke.disabled = false;
   }
-  if (rectPoints == heldToken) {
+  if (rectPoints == playerInventory) {
     craft.disabled = false;
   }
-  if (heldToken) {
+  if (playerInventory) {
     store.disabled = false;
   }
 }
 
 function processMovement(
-  loc: leaflet.LatLng,
-  dir: string,
-): leaflet.LatLng | [number, number] {
+  loc: Location,
+  dir: Direction,
+): Point {
   switch (dir) {
     case "up":
-      return [loc.lat + 0.0001, loc.lng];
+      return { x: loc.lat + 0.0001, y: loc.lng };
     case "down":
-      return [loc.lat - 0.0001, loc.lng];
+      return { x: loc.lat - 0.0001, y: loc.lng };
     case "left":
-      return [loc.lat, loc.lng - 0.0001];
+      return { x: loc.lat, y: loc.lng - 0.0001 };
     case "right":
-      return [loc.lat, loc.lng + 0.0001];
+      return { x: loc.lat, y: loc.lng + 0.0001 };
   }
-  return [loc.lat, loc.lng];
 }
 
 function latLngToGrid(x: number) {
@@ -323,6 +334,6 @@ function gridToLatLng(x: number) { // (0, 0) will return 0, 0
   return x * 0.0001;
 }
 
-function coordsToKey(point: Point): string {
+function coordsToKey(point: Point): CellKey {
   return point.x.toString() + point.y.toString();
 }
