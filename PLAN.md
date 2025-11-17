@@ -62,3 +62,11 @@ Key technical challenge: How do you store cell data when cells are reloaded?
 - [x] apply the Memento pattern to remember state of cells when the player moves to a different location
 
 NOTE: I don't think I used either pattern, I just followed the tips that Adam gave out and everything works? Cells off screen already don't require storage since they are cleared. State of cells are remembered through the use of maps.
+
+## D3.d: Gameplay Across Real-world Space and Time
+
+- [ ] access the browser's geolocation to set player movement
+- [ ] update the player location based on geolocation
+- [ ] use browser API to save game state
+- [ ] allow player a way to switch between the two movement options
+- [ ] ensure that the implementation uses the Facade design pattern
