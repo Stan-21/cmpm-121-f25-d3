@@ -104,8 +104,25 @@ playerMarker.bindTooltip("Current location!");
 const featureGroup = leaflet.featureGroup().addTo(map);
 
 // Flyweight pattern: key is intrinsic state (cell coordinates), value is extrinsic state (cell contents)
-const cellMap = new Map<CellKey, CellContents>();
+let cellMap = new Map<CellKey, CellContents>();
 
+if (localStorage.savedMap) {
+  cellMap = new Map(JSON.parse(localStorage.savedMap));
+  playerInventory = localStorage.playerToken;
+  statusPanelDiv.innerHTML = `${playerInventory}`;
+  console.log("there is a map");
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(setLocation);
+  }
+} else {
+  console.log("no map");
+}
+
+function setLocation(position: GeolocationPosition) {
+  console.log("set location");
+  playerMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
+  map.setView(playerMarker.getLatLng());
+}
 function spawnCell(point: Point) {
   const bounds = leaflet.latLngBounds([
     [
@@ -148,6 +165,7 @@ function spawnCell(point: Point) {
     checkColor(rect, rectPoints);
     checkButtons(popupDiv, rectPoints, point);
     cellMap.set(coordsToKey(point), rectPoints);
+    localStorage.savedMap = JSON.stringify(Array.from(cellMap));
   });
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
@@ -156,6 +174,7 @@ function spawnCell(point: Point) {
       if (playerInventory == null) {
         //console.log(`You have no token.  Picking up token of ${rectPoints}`);
         playerInventory = rectPoints;
+        localStorage.playerToken = playerInventory;
         statusPanelDiv.innerHTML = `${playerInventory}`;
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
@@ -179,6 +198,7 @@ function spawnCell(point: Point) {
         );*/
         rectPoints! *= 2;
         playerInventory = null;
+        localStorage.playerToken = playerInventory;
         statusPanelDiv.innerText = `${playerInventory}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
@@ -201,6 +221,7 @@ function spawnCell(point: Point) {
         //console.log(`Storing token into cell`);
         rectPoints = playerInventory;
         playerInventory = null;
+        localStorage.playerToken = playerInventory;
         statusPanelDiv.innerHTML = `${playerInventory}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
@@ -226,6 +247,7 @@ function swapToken(
   );*/
   const temp = playerInventory;
   playerInventory = rectPoints;
+  localStorage.playerToken = playerInventory;
   rectPoints = temp;
   statusPanelDiv.innerHTML = `${playerInventory}`;
   div.querySelector<HTMLSpanElement>("#message")!.innerHTML =

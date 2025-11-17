@@ -65,8 +65,8 @@ NOTE: I don't think I used either pattern, I just followed the tips that Adam ga
 
 ## D3.d: Gameplay Across Real-world Space and Time
 
-- [ ] access the browser's geolocation to set player movement
-- [ ] update the player location based on geolocation
-- [ ] use browser API to save game state
+- [x] access the browser's geolocation to set player movement
+- [x] update the player location based on geolocation
+- [x] use browser API to save game state
 - [ ] allow player a way to switch between the two movement options
 - [ ] ensure that the implementation uses the Facade design pattern
