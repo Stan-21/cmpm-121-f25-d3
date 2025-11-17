@@ -60,8 +60,21 @@ let playerInventory: CellContents = 2;
 
 const statusPanelDiv = document.createElement("div");
 statusPanelDiv.id = "statusPanel";
-statusPanelDiv.innerText = `${playerInventory}`;
 wrapDiv.append(statusPanelDiv);
+
+const statusDiv = document.createElement("body");
+statusDiv.id = "status";
+statusDiv.innerText = `${playerInventory}`;
+statusPanelDiv.append(statusDiv);
+
+const logDiv = document.createElement("body");
+logDiv.id = "log";
+statusPanelDiv.append(logDiv);
+
+const chatBox = document.createElement("textarea");
+chatBox.id = "chat";
+chatBox.placeholder = "Type command here: ";
+statusPanelDiv.append(chatBox);
 
 // Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
@@ -109,7 +122,7 @@ let cellMap = new Map<CellKey, CellContents>();
 if (localStorage.savedMap) {
   cellMap = new Map(JSON.parse(localStorage.savedMap));
   playerInventory = localStorage.playerToken;
-  statusPanelDiv.innerHTML = `${playerInventory}`;
+  statusDiv.innerHTML = `${playerInventory}`;
   console.log("there is a map");
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(setLocation);
@@ -175,7 +188,7 @@ function spawnCell(point: Point) {
         //console.log(`You have no token.  Picking up token of ${rectPoints}`);
         playerInventory = rectPoints;
         localStorage.playerToken = playerInventory;
-        statusPanelDiv.innerHTML = `${playerInventory}`;
+        statusDiv.innerHTML = `${playerInventory}`;
         rectPoints = null;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
@@ -199,12 +212,12 @@ function spawnCell(point: Point) {
         rectPoints! *= 2;
         playerInventory = null;
         localStorage.playerToken = playerInventory;
-        statusPanelDiv.innerText = `${playerInventory}`;
+        statusDiv.innerText = `${playerInventory}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
         if (rectPoints == 32) {
           //console.log("You win!");
-          statusPanelDiv.innerText = `You completed the tutorial!  You win!`;
+          statusDiv.innerText = `You completed the tutorial!  You win!`;
         }
       } else {
         //console.log(`Cannot craft!`);
@@ -222,7 +235,7 @@ function spawnCell(point: Point) {
         rectPoints = playerInventory;
         playerInventory = null;
         localStorage.playerToken = playerInventory;
-        statusPanelDiv.innerHTML = `${playerInventory}`;
+        statusDiv.innerHTML = `${playerInventory}`;
         popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
           `There is a cell at ${point.x},${point.y}.`;
       } else {
@@ -249,7 +262,7 @@ function swapToken(
   playerInventory = rectPoints;
   localStorage.playerToken = playerInventory;
   rectPoints = temp;
-  statusPanelDiv.innerHTML = `${playerInventory}`;
+  statusDiv.innerHTML = `${playerInventory}`;
   div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
     `There is a cell at ${point.x},${point.y}.`;
   return rectPoints;
