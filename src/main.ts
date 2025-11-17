@@ -19,34 +19,23 @@ interface Point {
 type CellKey = string;
 type CellContents = number | null;
 
-interface Location {
-  lat: number;
-  lng: number;
-}
-
-type Direction = "up" | "down" | "left" | "right";
+const commandList = [
+  "up",
+  "down",
+  "left",
+  "right",
+  "teleport",
+  "use_location",
+  "clear",
+  "reset",
+  "help",
+];
 
 // Create basic UI elements
 const controlPanelDiv = document.createElement("div");
 controlPanelDiv.id = "controlPanel";
-controlPanelDiv.innerHTML = `<h1>D3: World of Bits</h1>`;
+controlPanelDiv.innerHTML = `<h1>D3: World of <s>2048</s> 1024</h1>`;
 document.body.append(controlPanelDiv);
-
-const directions: Direction[] = ["up", "down", "left", "right"];
-
-directions.forEach((item) => {
-  const directionButton = document.createElement("button");
-  directionButton.innerHTML = item;
-  controlPanelDiv.append(directionButton);
-
-  directionButton.addEventListener("click", () => {
-    const { x, y } = processMovement(playerMarker.getLatLng(), item);
-    playerMarker.setLatLng({ lat: x, lng: y });
-    featureGroup.clearLayers();
-    generateCells();
-    map.setView(playerMarker.getLatLng());
-  });
-});
 
 const wrapDiv = document.createElement("div");
 wrapDiv.id = "wrapDiv";
@@ -64,7 +53,7 @@ wrapDiv.append(statusPanelDiv);
 
 const statusDiv = document.createElement("body");
 statusDiv.id = "status";
-statusDiv.innerHTML = `${playerInventory}`;
+statusDiv.innerHTML = `Held Token: ${playerInventory}`;
 statusPanelDiv.append(statusDiv);
 
 const logDiv = document.createElement("body");
@@ -75,6 +64,16 @@ const chatBox = document.createElement("textarea");
 chatBox.id = "chat";
 chatBox.placeholder = "Type command here: ";
 statusPanelDiv.append(chatBox);
+
+chatBox.addEventListener("keypress", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (commandList.includes(chatBox.value)) {
+      processCommand(chatBox.value);
+      chatBox.value = "";
+    }
+  }
+});
 
 // Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
@@ -88,6 +87,8 @@ const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD = { x: 16, y: 8 };
 const CELL_SPAWN_PROBABILITY = 0.1;
 const possibleStartingNum = [0, 2, 4, 8, 16];
+
+let USING_GEOLOCATION = true;
 
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
@@ -113,6 +114,9 @@ map.addEventListener("moveend", () => {
 
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
+
+const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
+  .addTo(map); // Visual indicator of obtainable caches
 
 const featureGroup = leaflet.featureGroup().addTo(map);
 
@@ -161,21 +165,19 @@ function spawnCell(point: Point) {
     checkColor(rect, rectPoints);
     checkButtons(popupDiv, rectPoints, point);
     saveGame(point, rectPoints);
-    statusDiv.innerHTML = `${playerInventory}`;
+    statusDiv.innerHTML = `Held Token: ${playerInventory}`;
   });
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
     "click",
     () => {
       if (playerInventory == null) {
-        //console.log(`You have no token.  Picking up token of ${rectPoints}`);
+        updateStatus(`You have no token.  Picking up token of ${rectPoints}`);
         playerInventory = rectPoints;
-        statusDiv.innerHTML = `${playerInventory}`;
+        statusDiv.innerHTML = `Held Token: ${playerInventory}`;
         rectPoints = null;
       } else if (rectPoints) {
         rectPoints = swapToken(rectPoints);
-      } else {
-        //console.log("There is nothing here that could be poked!");
       }
     },
   );
@@ -184,11 +186,11 @@ function spawnCell(point: Point) {
     "click",
     () => {
       if (playerInventory == rectPoints) {
-        /*console.log(
-          `Crafting a token of value ${heldToken} to create a ${
-            heldToken! * 2
+        updateStatus(
+          `Crafting a token of value ${playerInventory} to create a ${
+            playerInventory! * 2
           } token!`,
-        );*/
+        );
         rectPoints! *= 2;
         playerInventory = null;
         if (rectPoints == 32) {
@@ -196,7 +198,7 @@ function spawnCell(point: Point) {
           statusDiv.innerHTML = `You completed the tutorial!  You win!`;
         }
       } else {
-        //console.log(`Cannot craft!`);
+        updateStatus(`Cannot craft!`);
       }
     },
   );
@@ -207,11 +209,11 @@ function spawnCell(point: Point) {
       if (playerInventory && rectPoints) {
         rectPoints = swapToken(rectPoints);
       } else if (playerInventory) {
-        //console.log(`Storing token into cell`);
+        updateStatus("Storing token into cell");
         rectPoints = playerInventory;
         playerInventory = null;
       } else {
-        //console.log("Player has no token.  Cannot store anything");
+        updateStatus("Player has no token.  Cannot store anything");
       }
     },
   );
@@ -225,9 +227,9 @@ function spawnCell(point: Point) {
 function swapToken(
   rectPoints: number | null,
 ) {
-  /*console.log(
+  updateStatus(
     `You have a token in your inventory.  Swapping inventory with cell`,
-  );*/
+  );
   const temp = playerInventory;
   playerInventory = rectPoints;
   rectPoints = temp;
@@ -235,9 +237,6 @@ function swapToken(
 }
 
 function generateCells() {
-  const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
-    .addTo(map); // Visual indicator of obtainable caches
-  featureGroup.addLayer(radius);
   const x = latLngToGrid(map.getCenter().lng);
   const y = latLngToGrid(map.getCenter().lat);
   for (let i = -NEIGHBORHOOD.x; i < NEIGHBORHOOD.x; i++) {
@@ -270,7 +269,6 @@ function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
       permanent: true,
       direction: "center",
     }).setContent(rectPoints!.toString());
-    console.log(typeof rectPoints);
     rect.bindTooltip(tooltip);
   } else {
     rect.unbindTooltip();
@@ -310,22 +308,6 @@ function checkButtons(
   }
 }
 
-function processMovement(
-  loc: Location,
-  dir: Direction,
-): Point {
-  switch (dir) {
-    case "up":
-      return { x: loc.lat + 0.0001, y: loc.lng };
-    case "down":
-      return { x: loc.lat - 0.0001, y: loc.lng };
-    case "left":
-      return { x: loc.lat, y: loc.lng - 0.0001 };
-    case "right":
-      return { x: loc.lat, y: loc.lng + 0.0001 };
-  }
-}
-
 function latLngToGrid(x: number) {
   return Math.round(x / 0.0001);
 }
@@ -348,8 +330,7 @@ function loadGame() {
   if (localStorage.savedMap) {
     cellMap = new Map(JSON.parse(localStorage.savedMap));
     playerInventory = Number(localStorage.playerToken);
-    statusDiv.innerHTML = `${playerInventory}`;
-    console.log("there is a map");
+    statusDiv.innerHTML = `Held Token: ${playerInventory}`;
   } else {
     console.log("No previous map data could be found");
   }
@@ -357,15 +338,83 @@ function loadGame() {
 
 function setLocation(position: GeolocationPosition) {
   playerMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
+  radius.setLatLng(playerMarker.getLatLng());
   map.setView(playerMarker.getLatLng());
 }
 
 function updateLocation() {
-  navigator.geolocation.getCurrentPosition(setLocation);
+  if (USING_GEOLOCATION) {
+    navigator.geolocation.getCurrentPosition(setLocation);
+  }
 }
 
-navigator.geolocation.getCurrentPosition(setLocation);
+function processCommand(command: string) {
+  const x = playerMarker.getLatLng().lat;
+  const y = playerMarker.getLatLng().lng;
+  switch (command) {
+    case "up":
+      processMovement({ x: x + 0.0001, y: y });
+      break;
+    case "down":
+      processMovement({ x: x - 0.0001, y: y });
+      break;
+    case "left":
+      processMovement({ x: x, y: y - 0.0001 });
+      break;
+    case "right":
+      processMovement({ x: x, y: y + 0.0001 });
+      break;
+    case "teleport": {
+      const { x, y } = {
+        x: Math.random() * 180 - 90,
+        y: Math.random() * 360 - 180,
+      };
+      processMovement({ x, y });
+      updateStatus(`Teleport to ${y}, ${x}`);
+      break;
+    }
+    case "use_location":
+      USING_GEOLOCATION = true;
+      updateLocation();
+      updateStatus(`Teleported back to browser location`);
+      break;
+    case "clear":
+      logDiv.innerHTML = "";
+      break;
+    case "reset":
+      localStorage.clear();
+      location.reload();
+      break;
+    case "help":
+      updateStatus(
+        "Type 'reset' if you ever want to start over!  Have fun!",
+      );
+      updateStatus(
+        "Type 'teleport' to teleport to a random location with fresh cells!  Type 'use_location' to go back to your current location.  Use 'clear' if this log every gets too clutted!",
+      );
+      updateStatus(
+        "Craft a 1024 token to win!  Here's a list of helpful commands that may help in your journey!  Type 'up' 'down' 'left' or 'right' to move without getting out of your chair!",
+      );
+  }
+}
+
+function processMovement(point: Point) {
+  USING_GEOLOCATION = false;
+  console.log(point);
+  playerMarker.setLatLng([point.x, point.y]);
+  radius.setLatLng(playerMarker.getLatLng());
+  map.setView(playerMarker.getLatLng());
+}
+
+function updateStatus(message: string) {
+  const element = document.createElement("body");
+  element.innerText = message;
+  element.id = "logMessage";
+  logDiv.prepend(element);
+}
+
+updateLocation();
+setInterval(updateLocation, 5000);
 loadGame();
 generateCells();
-
-setInterval(updateLocation, 1000);
+processCommand("help");

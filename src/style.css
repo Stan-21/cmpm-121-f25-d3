@@ -16,7 +16,15 @@
   padding: 1px;
   display: flex;
   flex-direction: column;
-  height: 90%;
+  height: 600px;
+  overflow-y: auto;
+}
+
+#logMessage {
+  font-size: 12px;
+  border: 1px solid black;
+  height: 5%;
+  width: 95%;
 }
 
 #status {
