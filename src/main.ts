@@ -121,6 +121,8 @@ const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
 const featureGroup = leaflet.featureGroup().addTo(map);
 
 // Flyweight pattern: key is intrinsic state (cell coordinates), value is extrinsic state (cell contents)
+// Memento pattern: the cell map keeps track of the state of cells that are interacted with
+// If a cell has been interacted with, that state will be restored when cells are spawned again
 let cellMap = new Map<CellKey, CellContents>();
 
 function spawnCell(point: Point) {
