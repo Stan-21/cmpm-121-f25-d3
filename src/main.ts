@@ -64,7 +64,7 @@ wrapDiv.append(statusPanelDiv);
 
 const statusDiv = document.createElement("body");
 statusDiv.id = "status";
-statusDiv.innerText = `${playerInventory}`;
+statusDiv.innerHTML = `${playerInventory}`;
 statusPanelDiv.append(statusDiv);
 
 const logDiv = document.createElement("body");
@@ -119,23 +119,6 @@ const featureGroup = leaflet.featureGroup().addTo(map);
 // Flyweight pattern: key is intrinsic state (cell coordinates), value is extrinsic state (cell contents)
 let cellMap = new Map<CellKey, CellContents>();
 
-if (localStorage.savedMap) {
-  cellMap = new Map(JSON.parse(localStorage.savedMap));
-  playerInventory = localStorage.playerToken;
-  statusDiv.innerHTML = `${playerInventory}`;
-  console.log("there is a map");
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(setLocation);
-  }
-} else {
-  console.log("no map");
-}
-
-function setLocation(position: GeolocationPosition) {
-  console.log("set location");
-  playerMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
-  map.setView(playerMarker.getLatLng());
-}
 function spawnCell(point: Point) {
   const bounds = leaflet.latLngBounds([
     [
@@ -177,8 +160,8 @@ function spawnCell(point: Point) {
   popupDiv.addEventListener("click", () => {
     checkColor(rect, rectPoints);
     checkButtons(popupDiv, rectPoints, point);
-    cellMap.set(coordsToKey(point), rectPoints);
-    localStorage.savedMap = JSON.stringify(Array.from(cellMap));
+    saveGame(point, rectPoints);
+    statusDiv.innerHTML = `${playerInventory}`;
   });
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
@@ -187,13 +170,10 @@ function spawnCell(point: Point) {
       if (playerInventory == null) {
         //console.log(`You have no token.  Picking up token of ${rectPoints}`);
         playerInventory = rectPoints;
-        localStorage.playerToken = playerInventory;
         statusDiv.innerHTML = `${playerInventory}`;
         rectPoints = null;
-        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${point.x},${point.y}.`;
       } else if (rectPoints) {
-        rectPoints = swapToken(rectPoints, popupDiv, point);
+        rectPoints = swapToken(rectPoints);
       } else {
         //console.log("There is nothing here that could be poked!");
       }
@@ -211,13 +191,9 @@ function spawnCell(point: Point) {
         );*/
         rectPoints! *= 2;
         playerInventory = null;
-        localStorage.playerToken = playerInventory;
-        statusDiv.innerText = `${playerInventory}`;
-        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${point.x},${point.y}.`;
         if (rectPoints == 32) {
           //console.log("You win!");
-          statusDiv.innerText = `You completed the tutorial!  You win!`;
+          statusDiv.innerHTML = `You completed the tutorial!  You win!`;
         }
       } else {
         //console.log(`Cannot craft!`);
@@ -229,15 +205,11 @@ function spawnCell(point: Point) {
     "click",
     () => {
       if (playerInventory && rectPoints) {
-        rectPoints = swapToken(rectPoints, popupDiv, point);
+        rectPoints = swapToken(rectPoints);
       } else if (playerInventory) {
         //console.log(`Storing token into cell`);
         rectPoints = playerInventory;
         playerInventory = null;
-        localStorage.playerToken = playerInventory;
-        statusDiv.innerHTML = `${playerInventory}`;
-        popupDiv.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-          `There is a cell at ${point.x},${point.y}.`;
       } else {
         //console.log("Player has no token.  Cannot store anything");
       }
@@ -252,23 +224,15 @@ function spawnCell(point: Point) {
 
 function swapToken(
   rectPoints: number | null,
-  div: HTMLDivElement,
-  point: Point,
 ) {
   /*console.log(
     `You have a token in your inventory.  Swapping inventory with cell`,
   );*/
   const temp = playerInventory;
   playerInventory = rectPoints;
-  localStorage.playerToken = playerInventory;
   rectPoints = temp;
-  statusDiv.innerHTML = `${playerInventory}`;
-  div.querySelector<HTMLSpanElement>("#message")!.innerHTML =
-    `There is a cell at ${point.x},${point.y}.`;
   return rectPoints;
 }
-
-generateCells();
 
 function generateCells() {
   const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
@@ -306,6 +270,7 @@ function checkColor(rect: leaflet.Rectangle, rectPoints: number | null) {
       permanent: true,
       direction: "center",
     }).setContent(rectPoints!.toString());
+    console.log(typeof rectPoints);
     rect.bindTooltip(tooltip);
   } else {
     rect.unbindTooltip();
@@ -372,3 +337,35 @@ function gridToLatLng(x: number) { // (0, 0) will return 0, 0
 function coordsToKey(point: Point): CellKey {
   return point.x.toString() + point.y.toString();
 }
+
+function saveGame(point: Point, rectPoints: CellContents) {
+  cellMap.set(coordsToKey(point), rectPoints);
+  localStorage.savedMap = JSON.stringify(Array.from(cellMap));
+  localStorage.playerToken = playerInventory;
+}
+
+function loadGame() {
+  if (localStorage.savedMap) {
+    cellMap = new Map(JSON.parse(localStorage.savedMap));
+    playerInventory = Number(localStorage.playerToken);
+    statusDiv.innerHTML = `${playerInventory}`;
+    console.log("there is a map");
+  } else {
+    console.log("No previous map data could be found");
+  }
+}
+
+function setLocation(position: GeolocationPosition) {
+  playerMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
+  map.setView(playerMarker.getLatLng());
+}
+
+function updateLocation() {
+  navigator.geolocation.getCurrentPosition(setLocation);
+}
+
+navigator.geolocation.getCurrentPosition(setLocation);
+loadGame();
+generateCells();
+
+setInterval(updateLocation, 1000);
