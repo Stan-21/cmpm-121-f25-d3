@@ -111,12 +111,12 @@ const statusPanelDiv = document.createElement("div");
 statusPanelDiv.id = "statusPanel";
 wrapDiv.append(statusPanelDiv);
 
-const statusDiv = document.createElement("body");
+const statusDiv = document.createElement("div");
 statusDiv.id = "status";
-statusDiv.innerHTML = `Held Token: ${playerInventory}`;
+refreshInventory();
 statusPanelDiv.append(statusDiv);
 
-const logDiv = document.createElement("body");
+const logDiv = document.createElement("div");
 logDiv.id = "log";
 statusPanelDiv.append(logDiv);
 
@@ -147,6 +147,7 @@ const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD = { x: 16, y: 8 };
 const CELL_SPAWN_PROBABILITY = 0.1;
 const possibleStartingNum = [0, 2, 4, 8, 16];
+const WIN_VALUE = 1024;
 
 let USING_GEOLOCATION = true;
 
@@ -176,7 +177,7 @@ const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
 
 const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 200 })
-  .addTo(map); // Visual indicator of obtainable caches
+  .addTo(map);
 
 const featureGroup = leaflet.featureGroup().addTo(map);
 
@@ -229,7 +230,7 @@ function spawnCell(point: Point) {
     checkColor(rect, rectPoints);
     checkButtons(popupDiv, rectPoints, point);
     saveGame(point, rectPoints);
-    statusDiv.innerHTML = `Held Token: ${playerInventory}`;
+    refreshInventory();
   });
 
   popupDiv.querySelector<HTMLButtonElement>("#poke")!.addEventListener(
@@ -238,7 +239,7 @@ function spawnCell(point: Point) {
       if (playerInventory == null) {
         updateStatus(`You have no token.  Picking up token of ${rectPoints}`);
         playerInventory = rectPoints;
-        statusDiv.innerHTML = `Held Token: ${playerInventory}`;
+        refreshInventory();
         rectPoints = null;
       } else if (rectPoints) {
         rectPoints = swapToken(rectPoints);
@@ -257,7 +258,7 @@ function spawnCell(point: Point) {
         );
         rectPoints! *= 2;
         playerInventory = null;
-        if (rectPoints == 1024) {
+        if (rectPoints == WIN_VALUE) {
           updateStatus(
             `Congrats, you win!  You can reset to play again or try to get the biggest possible token and break the game!`,
           );
@@ -374,15 +375,15 @@ function checkButtons(
 }
 
 function latLngToGrid(x: number) {
-  return Math.round(x / 0.0001);
+  return Math.round(x / TILE_DEGREES);
 }
 
-function gridToLatLng(x: number) { // (0, 0) will return 0, 0
-  return x * 0.0001;
+function gridToLatLng(x: number) {
+  return x * TILE_DEGREES;
 }
 
 function coordsToKey(point: Point): CellKey {
-  return point.x.toString() + point.y.toString();
+  return `${point.x},${point.y}`;
 }
 
 function saveGame(point: Point, rectPoints: CellContents) {
@@ -395,7 +396,7 @@ function loadGame() {
   if (localStorage.savedMap) {
     cellMap = new Map(JSON.parse(localStorage.savedMap));
     playerInventory = Number(localStorage.playerToken);
-    statusDiv.innerHTML = `Held Token: ${playerInventory}`;
+    refreshInventory();
   } else {
     console.log("No previous map data could be found");
   }
@@ -458,6 +459,10 @@ function updateStatus(message: string) {
   element.innerText = message;
   element.id = "logMessage";
   logDiv.prepend(element);
+}
+
+function refreshInventory() {
+  statusDiv.innerHTML = `Held Token: ${playerInventory}`;
 }
 
 updateLocation();
