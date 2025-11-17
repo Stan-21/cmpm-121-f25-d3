@@ -19,6 +19,66 @@ interface Point {
 type CellKey = string;
 type CellContents = number | null;
 
+class GameFacade {
+  constructor(
+    private map: leaflet.Map,
+    private playerMarker: leaflet.Marker,
+    private radius: leaflet.CircleMarker,
+  ) {}
+
+  move(dx: number, dy: number) {
+    USING_GEOLOCATION = false;
+    const { lat, lng } = this.playerMarker.getLatLng();
+    const newPos: [number, number] = [lat + dx, lng + dy];
+    this.playerMarker.setLatLng(newPos);
+    this.radius.setLatLng(newPos);
+    this.map.setView(newPos);
+  }
+
+  moveUp() {
+    this.move(+TILE_DEGREES, 0);
+  }
+  moveDown() {
+    this.move(-TILE_DEGREES, 0);
+  }
+  moveLeft() {
+    this.move(0, -TILE_DEGREES);
+  }
+  moveRight() {
+    this.move(0, +TILE_DEGREES);
+  }
+
+  teleportRandom() {
+    USING_GEOLOCATION = false;
+    const x = Math.random() * 180 - 90;
+    const y = Math.random() * 360 - 180;
+    this.move(
+      x - this.playerMarker.getLatLng().lat,
+      y - this.playerMarker.getLatLng().lng,
+    );
+    updateStatus(`Teleport to ${y}, ${x}`);
+  }
+
+  useGeolocation() {
+    USING_GEOLOCATION = true;
+    updateLocation();
+    updateStatus("Teleported back to browser location");
+  }
+
+  clearLog() {
+    logDiv.innerHTML = "";
+  }
+
+  reset() {
+    localStorage.clear();
+    location.reload();
+  }
+
+  saveCell(point: Point, value: CellContents) {
+    saveGame(point, value);
+  }
+}
+
 const commandList = [
   "up",
   "down",
@@ -115,7 +175,7 @@ map.addEventListener("moveend", () => {
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG).addTo(map);
 playerMarker.bindTooltip("Current location!");
 
-const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 150 })
+const radius = leaflet.circleMarker(playerMarker.getLatLng(), { radius: 200 })
   .addTo(map); // Visual indicator of obtainable caches
 
 const featureGroup = leaflet.featureGroup().addTo(map);
@@ -124,6 +184,8 @@ const featureGroup = leaflet.featureGroup().addTo(map);
 // Memento pattern: the cell map keeps track of the state of cells that are interacted with
 // If a cell has been interacted with, that state will be restored when cells are spawned again
 let cellMap = new Map<CellKey, CellContents>();
+
+const game = new GameFacade(map, playerMarker, radius);
 
 function spawnCell(point: Point) {
   const bounds = leaflet.latLngBounds([
@@ -195,9 +257,10 @@ function spawnCell(point: Point) {
         );
         rectPoints! *= 2;
         playerInventory = null;
-        if (rectPoints == 32) {
-          //console.log("You win!");
-          statusDiv.innerHTML = `You completed the tutorial!  You win!`;
+        if (rectPoints == 1024) {
+          updateStatus(
+            `Congrats, you win!  You can reset to play again or try to get the biggest possible token and break the game!`,
+          );
         }
       } else {
         updateStatus(`Cannot craft!`);
@@ -294,7 +357,7 @@ function checkButtons(
     Math.hypot(
       latLngToGrid(playerMarker.getLatLng().lng) - point.x,
       latLngToGrid(playerMarker.getLatLng().lat) - point.y,
-    ) > 4.5
+    ) > 5
   ) {
     return;
   }
@@ -351,41 +414,31 @@ function updateLocation() {
 }
 
 function processCommand(command: string) {
-  const x = playerMarker.getLatLng().lat;
-  const y = playerMarker.getLatLng().lng;
   switch (command) {
     case "up":
-      processMovement({ x: x + 0.0001, y: y });
+      game.moveUp();
       break;
     case "down":
-      processMovement({ x: x - 0.0001, y: y });
+      game.moveDown();
       break;
     case "left":
-      processMovement({ x: x, y: y - 0.0001 });
+      game.moveLeft();
       break;
     case "right":
-      processMovement({ x: x, y: y + 0.0001 });
+      game.moveRight();
       break;
     case "teleport": {
-      const { x, y } = {
-        x: Math.random() * 180 - 90,
-        y: Math.random() * 360 - 180,
-      };
-      processMovement({ x, y });
-      updateStatus(`Teleport to ${y}, ${x}`);
+      game.teleportRandom();
       break;
     }
     case "use_location":
-      USING_GEOLOCATION = true;
-      updateLocation();
-      updateStatus(`Teleported back to browser location`);
+      game.useGeolocation();
       break;
     case "clear":
-      logDiv.innerHTML = "";
+      game.clearLog();
       break;
     case "reset":
-      localStorage.clear();
-      location.reload();
+      game.reset();
       break;
     case "help":
       updateStatus(
@@ -398,14 +451,6 @@ function processCommand(command: string) {
         "Craft a 1024 token to win!  Here's a list of helpful commands that may help in your journey!  Type 'up' 'down' 'left' or 'right' to move without getting out of your chair!",
       );
   }
-}
-
-function processMovement(point: Point) {
-  USING_GEOLOCATION = false;
-  console.log(point);
-  playerMarker.setLatLng([point.x, point.y]);
-  radius.setLatLng(playerMarker.getLatLng());
-  map.setView(playerMarker.getLatLng());
 }
 
 function updateStatus(message: string) {
